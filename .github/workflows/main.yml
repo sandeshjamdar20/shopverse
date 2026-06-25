@@ -1,168 +1,209 @@
 name: ShopVerse CI/CD
 
 on:
-  push:
-    branches: [main]
+push:
+branches:
+- main
 
 env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
-  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-  EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
-  HELM_CHART_NAME: shopverse
-  TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+AWS_REGION: ${{ secrets.AWS_REGION }}
+ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+HELM_CHART_NAME: shopverse
+TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
 
 jobs:
-  # ──────────────────────────────────────────────
-  # Stage 1: Test
-  # ──────────────────────────────────────────────
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.24"
+test:
+name: Test
+runs-on: ubuntu-latest
 
-      - name: Update go.sum
-        working-directory: ./backend
-        run: go mod tidy
+```
+steps:
+  - uses: actions/checkout@v4
 
-      - name: Run Go tests
-        working-directory: ./backend
-        run: go test ./...
+  - name: Set up Go
+    uses: actions/setup-go@v5
+    with:
+      go-version: "1.24"
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
+  - name: Update go.sum
+    working-directory: ./backend
+    run: go mod tidy
 
-      - name: Install frontend dependencies
-        working-directory: ./frontend
-        run: npm install
+  - name: Run Go tests
+    working-directory: ./backend
+    run: go test ./...
 
-      - name: Run frontend lint
-        working-directory: ./frontend
-        run: npx eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0 --config .eslintrc.cjs
+  - name: Set up Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: "18"
 
-  # ──────────────────────────────────────────────
-  # Stage 2: Security Scan
-  # ──────────────────────────────────────────────
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
+  - name: Install frontend dependencies
+    working-directory: ./frontend
+    run: npm install
 
-      - name: Build frontend image
-        run: docker build -t shopverse-frontend:scan ./frontend
+  - name: Run frontend lint
+    working-directory: ./frontend
+    run: |
+      npx eslint . \
+      --ext js,jsx \
+      --report-unused-disable-directives \
+      --max-warnings 0 \
+      --config .eslintrc.cjs
+```
 
-      - name: Build backend image
-        run: docker build -t shopverse-backend:scan ./backend
+security-scan:
+name: Security Scan
+runs-on: ubuntu-latest
+needs: test
 
-      - name: Install Trivy
-        run: |
-          sudo apt-get install -y wget apt-transport-https gnupg
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -q
-          sudo apt-get install -y trivy
+```
+steps:
+  - uses: actions/checkout@v4
 
-      - name: Run Trivy scan on frontend
-        run: |
-          trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed --format table shopverse-frontend:scan
+  - name: Build frontend image
+    run: docker build -t shopverse-frontend:scan ./frontend
 
-      - name: Run Trivy scan on backend
-        run: |
-          trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed --format table shopverse-backend:scan
+  - name: Build backend image
+    run: docker build -t shopverse-backend:scan ./backend
 
-  # ──────────────────────────────────────────────
-  # Stage 3: Build, Tag & Push Images + Helm Chart
-  # ──────────────────────────────────────────────
-  build-and-push:
-    name: Build, Tag & Push
-    runs-on: ubuntu-latest
-    needs: security-scan
-    steps:
-      - uses: actions/checkout@v4
+  - name: Install Trivy
+    run: |
+      sudo apt-get update
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+      sudo apt-get install -y \
+        wget \
+        apt-transport-https \
+        gnupg
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      wget -qO - \
+      https://aquasecurity.github.io/trivy-repo/deb/public.key \
+      | gpg --dearmor \
+      | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
 
-      - name: Ensure ECR repositories exist
-        run: |
-          for repo in shopverse-frontend shopverse-backend shopverse-helmchart/shopverse; do
-            aws ecr describe-repositories --repository-names $repo --region ${{ env.AWS_REGION }} 2>/dev/null || \
-            aws ecr create-repository --repository-name $repo --region ${{ env.AWS_REGION }}
-          done
+      echo \
+      "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" \
+      | sudo tee /etc/apt/sources.list.d/trivy.list
 
-      - name: Build and tag frontend image
-        run: |
-          docker build -t ${{ env.ECR_REGISTRY }}/shopverse-frontend:${{ github.sha }} \
-                        -t ${{ env.ECR_REGISTRY }}/shopverse-frontend:latest \
-                        ./frontend
+      sudo apt-get update
 
-      - name: Build and tag backend image
-        run: |
-          docker build -t ${{ env.ECR_REGISTRY }}/shopverse-backend:${{ github.sha }} \
-                        -t ${{ env.ECR_REGISTRY }}/shopverse-backend:latest \
-                        ./backend
+      sudo apt-get install -y trivy
 
-      - name: Push frontend image
-        run: |
-          docker push ${{ env.ECR_REGISTRY }}/shopverse-frontend:${{ github.sha }}
-          docker push ${{ env.ECR_REGISTRY }}/shopverse-frontend:latest
+  - name: Run Trivy frontend
+    run: |
+      trivy image \
+      --exit-code 1 \
+      --severity CRITICAL \
+      shopverse-frontend:scan
 
-      - name: Push backend image
-        run: |
-          docker push ${{ env.ECR_REGISTRY }}/shopverse-backend:${{ github.sha }}
-          docker push ${{ env.ECR_REGISTRY }}/shopverse-backend:latest
+  - name: Run Trivy backend
+    run: |
+      trivy image \
+      --exit-code 1 \
+      --severity CRITICAL \
+      shopverse-backend:scan
+```
 
-      - name: Update Helm values.yaml with new image tags
-        run: |
-          FRONTEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-frontend:${{ github.sha }}"
-          BACKEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-backend:${{ github.sha }}"
-          sed -i "s|image:.*# frontend-image|image: ${FRONTEND_IMG}  # frontend-image|" helm/shopverse/values.yaml
-          sed -i "s|image:.*# backend-image|image: ${BACKEND_IMG}  # backend-image|" helm/shopverse/values.yaml
-          echo "Updated values.yaml:"
-          cat helm/shopverse/values.yaml
+build-and-push:
+name: Build Push Helm
+runs-on: ubuntu-latest
+needs: security-scan
 
-      - name: Install Helm
-        uses: azure/setup-helm@v3
+```
+steps:
 
-      - name: Login Helm to ECR
-        run: |
-          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
-            helm registry login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+  - uses: actions/checkout@v4
+    with:
+      fetch-depth: 0
 
-      - name: Package Helm chart
-        run: |
-          helm package ./helm/shopverse \
-            --version 1.0.0-${{ github.sha }} \
-            --app-version ${{ github.sha }}
+  - name: Configure AWS
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      aws-region: ${{ env.AWS_REGION }}
 
-      - name: Push Helm chart to ECR
-        run: |
-          helm push shopverse-1.0.0-${{ github.sha }}.tgz \
-            oci://${{ env.ECR_REGISTRY }}/shopverse-helmchart
-            * name: Push updated values.yaml to GitHub
-  run: |
-  git config --global user.name "sandeshjamdar20"
-  git config --global user.email "[sandeshjamdar51@gmail.com](mailto:sandeshjamdar51@gmail.com)"
+  - name: Login ECR
+    uses: aws-actions/amazon-ecr-login@v2
 
-  git add helm/shopverse/values.yaml
+  - name: Ensure repositories
+    run: |
+      for repo in \
+        shopverse-frontend \
+        shopverse-backend \
+        shopverse-helmchart
+      do
+        aws ecr describe-repositories \
+        --repository-names $repo \
+        || \
+        aws ecr create-repository \
+        --repository-name $repo
+      done
 
-  git commit -m "Image updated"
+  - name: Build frontend
+    run: |
+      docker build \
+      -t $ECR_REGISTRY/shopverse-frontend:${GITHUB_SHA} \
+      ./frontend
 
-  git push
+  - name: Build backend
+    run: |
+      docker build \
+      -t $ECR_REGISTRY/shopverse-backend:${GITHUB_SHA} \
+      ./backend
+
+  - name: Push images
+    run: |
+      docker push \
+      $ECR_REGISTRY/shopverse-frontend:${GITHUB_SHA}
+
+      docker push \
+      $ECR_REGISTRY/shopverse-backend:${GITHUB_SHA}
+
+  - name: Update values.yaml
+    run: |
+      sed -i \
+      "s|tag:.*|tag: ${GITHUB_SHA}|g" \
+      helm/shopverse/values.yaml
+
+      cat helm/shopverse/values.yaml
+
+  - name: Push updated values.yaml
+    run: |
+      git config --global user.name "sandeshjamdar20"
+
+      git config --global user.email "sandeshjamdar51@gmail.com"
+
+      git add helm/shopverse/values.yaml
+
+      git commit \
+      -m "update image ${GITHUB_SHA}" \
+      || echo "No changes"
+
+      git push
+
+  - name: Install Helm
+    uses: azure/setup-helm@v3
+
+  - name: Helm Login
+    run: |
+      aws ecr get-login-password \
+      --region $AWS_REGION \
+      | helm registry login \
+      --username AWS \
+      --password-stdin \
+      $ECR_REGISTRY
+
+  - name: Package Helm
+    run: |
+      helm package \
+      ./helm/shopverse \
+      --version 1.0.0-${GITHUB_SHA}
+
+  - name: Push Helm
+    run: |
+      helm push \
+      shopverse-1.0.0-${GITHUB_SHA}.tgz \
+      oci://$ECR_REGISTRY/shopverse-helmchart
