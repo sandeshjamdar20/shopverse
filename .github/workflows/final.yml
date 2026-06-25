@@ -86,7 +86,7 @@ steps:
       --exit-code 1 \
       --severity CRITICAL \
       shopverse-backend:scan
-```
+
 
 build-and-push:
 name: Build and Push
