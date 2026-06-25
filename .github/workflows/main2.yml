@@ -9,7 +9,7 @@ jobs:
 
 test:
 
-```
+
 runs-on: ubuntu-latest
 
 steps:
@@ -20,4 +20,3 @@ steps:
   - name: Verify
     run: |
       echo "Pipeline Working"
-```
