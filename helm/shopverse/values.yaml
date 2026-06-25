@@ -14,7 +14,7 @@ backend:
   serviceName: shopverse-backend-svc
   servicePort: 8080
   ingressName: shopverse-backend-ingress
-  ingressHost: "jamdarwadi.shop"
+  ingressHost: "api.jamdarwadi.shop"
 
 # ──────────────────────────────────────
 # MySQL
