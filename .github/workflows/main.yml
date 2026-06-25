@@ -156,3 +156,14 @@ jobs:
         run: |
           helm push shopverse-1.0.0-${{ github.sha }}.tgz \
             oci://${{ env.ECR_REGISTRY }}/shopverse-helmchart
+            * name: Push updated values.yaml to GitHub
+  run: |
+  git config --global user.name "sandeshjamdar20"
+  git config --global user.email "[sandeshjamdar51@gmail.com](mailto:sandeshjamdar51@gmail.com)"
+
+  git add helm/shopverse/values.yaml
+
+  git commit -m "Image updated"
+
+  git push
+
