@@ -147,7 +147,6 @@ jobs:
   # ──────────────────────────────────────────────
   # Stage 4: Provision Infra (if needed) + Deploy
   # ──────────────────────────────────────────────
-```
   - name: Update Helm values
     run: |
       FRONTEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-frontend:${{ github.sha }}"
