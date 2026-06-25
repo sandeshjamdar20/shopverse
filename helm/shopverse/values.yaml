@@ -5,7 +5,7 @@ frontend:
   serviceName: shopverse-frontend-svc
   servicePort: 80
   ingressName: shopverse-frontend-ingress
-  ingressHost: ""
+  ingressHost: "frontend.local"
 
 backend:
   deploymentName: shopverse-backend
@@ -14,7 +14,7 @@ backend:
   serviceName: shopverse-backend-svc
   servicePort: 8080
   ingressName: shopverse-backend-ingress
-  ingressHost: ""
+  ingressHost: "backend.local"
 
 # ──────────────────────────────────────
 # MySQL
@@ -38,8 +38,6 @@ mysql:
 # Shared
 # ──────────────────────────────────────
 ingress:
-  enabled: false
-  ingressClassName: traefik
+  enabled: true
+  ingressClassName: nginx
   annotations: {}
-
-jwtSecret: ""
