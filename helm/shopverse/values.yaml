@@ -5,7 +5,7 @@ frontend:
   serviceName: shopverse-frontend-svc
   servicePort: 80
   ingressName: shopverse-frontend-ingress
-  ingressHost: "frontend.local"
+  ingressHost: "jamdarwadi.shop"
 
 backend:
   deploymentName: shopverse-backend
@@ -14,7 +14,7 @@ backend:
   serviceName: shopverse-backend-svc
   servicePort: 8080
   ingressName: shopverse-backend-ingress
-  ingressHost: "backend.local"
+  ingressHost: "jamdarwadi.shop"
 
 # ──────────────────────────────────────
 # MySQL
