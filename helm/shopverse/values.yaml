@@ -41,4 +41,5 @@ ingress:
   enabled: true
   ingressClassName: nginx
   annotations: {}
-  jwtSecret: "shopverse-jwt-secret"
+
+jwtSecret: "shopverse-jwt-secret"
