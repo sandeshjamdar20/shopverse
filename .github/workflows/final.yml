@@ -43,8 +43,7 @@ steps:
   - name: Run frontend lint
     working-directory: ./frontend
     run: npm run lint
-```
-
+    
 security-scan:
 name: Security Scan
 runs-on: ubuntu-latest
