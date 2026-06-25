@@ -17,7 +17,6 @@ test:
 name: Test
 runs-on: ubuntu-latest
 
-```
 steps:
   - uses: actions/checkout@v4
 
@@ -48,14 +47,14 @@ steps:
       --ext js,jsx \
       --max-warnings 0 \
       --config .eslintrc.cjs
-```
+
 
 security-scan:
 name: Security Scan
 runs-on: ubuntu-latest
 needs: test
 
-```
+
 steps:
 
   - uses: actions/checkout@v4
@@ -101,14 +100,14 @@ steps:
       --exit-code 1 \
       --severity CRITICAL \
       shopverse-backend:scan
-```
+
 
 build-and-push:
 name: Build Push Deploy
 runs-on: ubuntu-latest
 needs: security-scan
 
-```
+
 steps:
 
   - uses: actions/checkout@v4
@@ -230,4 +229,4 @@ steps:
       helm push \
       shopverse-1.0.0-${GITHUB_SHA}.tgz \
       oci://$ECR_REGISTRY/shopverse-helmchart
-```
+
