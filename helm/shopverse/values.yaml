@@ -28,8 +28,8 @@ backend:
 mysql:
   database: shopverse
   user: shopverse
-  rootPassword: ""
-  password: ""
+  rootPassword: "Admin@123"
+  password: "Admin@123"
   storage: 5Gi
   storageClass: gp2
   resources:
