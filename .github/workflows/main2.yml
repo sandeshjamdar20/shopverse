@@ -128,13 +128,18 @@ jobs:
           docker push ${{ env.ECR_REGISTRY }}/shopverse-backend:latest
 
       - name: Update Helm values.yaml with new image tags
-        run: |
-          FRONTEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-frontend:${{ github.sha }}"
-          BACKEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-backend:${{ github.sha }}"
-          sed -i "s|image:.*# frontend-image|image: ${FRONTEND_IMG}  # frontend-image|" helm/shopverse/values.yaml
-          sed -i "s|image:.*# backend-image|image: ${BACKEND_IMG}  # backend-image|" helm/shopverse/values.yaml
-          echo "Updated values.yaml:"
-          cat helm/shopverse/values.yaml
+       - name: Update Helm values.yaml with new image tags
+
+  run: |
+    FRONTEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-frontend:${{ github.sha }}"
+    BACKEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-backend:${{ github.sha }}"
+
+    sed -i "s|image:.*# frontend-image|image: ${FRONTEND_IMG} # frontend-image|" helm/shopverse/values.yaml
+
+    sed -i "s|image:.*# backend-image|image: ${BACKEND_IMG} # backend-image|" helm/shopverse/values.yaml
+
+    echo "Updated values.yaml:"
+    cat helm/shopverse/values.yaml
 
       - name: Install Helm
         uses: azure/setup-helm@v3
