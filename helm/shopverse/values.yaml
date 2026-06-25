@@ -1,22 +1,16 @@
-# ──────────────────────────────────────
-# Frontend
-# ──────────────────────────────────────
 frontend:
   deploymentName: shopverse-frontend
   replicas: 2
-  image: ""  # frontend-image
+  image: "609898225296.dkr.ecr.us-east-1.amazonaws.com/shopverse-frontend:latest"
   serviceName: shopverse-frontend-svc
   servicePort: 80
   ingressName: shopverse-frontend-ingress
   ingressHost: ""
 
-# ──────────────────────────────────────
-# Backend
-# ──────────────────────────────────────
 backend:
   deploymentName: shopverse-backend
   replicas: 2
-  image: ""  # backend-image
+  image: "609898225296.dkr.ecr.us-east-1.amazonaws.com/shopverse-backend:latest"
   serviceName: shopverse-backend-svc
   servicePort: 8080
   ingressName: shopverse-backend-ingress
