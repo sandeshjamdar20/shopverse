@@ -69,11 +69,9 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update -q
           sudo apt-get install -y trivy
-
       - name: Run Trivy scan on frontend
         run: |
           trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed --format table shopverse-frontend:scan
-
       - name: Run Trivy scan on backend
         run: |
           trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed --format table shopverse-backend:scan
@@ -104,29 +102,24 @@ jobs:
             aws ecr describe-repositories --repository-names $repo --region ${{ env.AWS_REGION }} 2>/dev/null || \
             aws ecr create-repository --repository-name $repo --region ${{ env.AWS_REGION }}
           done
-
       - name: Build and tag frontend image
         run: |
           docker build -t ${{ env.ECR_REGISTRY }}/shopverse-frontend:${{ github.sha }} \
                         -t ${{ env.ECR_REGISTRY }}/shopverse-frontend:latest \
                         ./frontend
-
       - name: Build and tag backend image
         run: |
           docker build -t ${{ env.ECR_REGISTRY }}/shopverse-backend:${{ github.sha }} \
                         -t ${{ env.ECR_REGISTRY }}/shopverse-backend:latest \
                         ./backend
-
       - name: Push frontend image
         run: |
           docker push ${{ env.ECR_REGISTRY }}/shopverse-frontend:${{ github.sha }}
           docker push ${{ env.ECR_REGISTRY }}/shopverse-frontend:latest
-
       - name: Push backend image
         run: |
           docker push ${{ env.ECR_REGISTRY }}/shopverse-backend:${{ github.sha }}
           docker push ${{ env.ECR_REGISTRY }}/shopverse-backend:latest
-
       - name: Update Helm values.yaml with new image tags
         run: |
           FRONTEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-frontend:${{ github.sha }}"
@@ -135,7 +128,6 @@ jobs:
           sed -i "s|image:.*# backend-image|image: ${BACKEND_IMG}  # backend-image|" helm/shopverse/values.yaml
           echo "Updated values.yaml:"
           cat helm/shopverse/values.yaml
-
       - name: Install Helm
         uses: azure/setup-helm@v3
 
@@ -143,13 +135,11 @@ jobs:
         run: |
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
             helm registry login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
-
       - name: Package Helm chart
         run: |
           helm package ./helm/shopverse \
             --version 1.0.0-${{ github.sha }} \
             --app-version ${{ github.sha }}
-
       - name: Push Helm chart to ECR
         run: |
           helm push shopverse-1.0.0-${{ github.sha }}.tgz \
@@ -158,6 +148,14 @@ jobs:
   # Stage 4: Provision Infra (if needed) + Deploy
   # ──────────────────────────────────────────────
   * name: Update Helm values
+ Check failure on line 160 in .github/workflows/deploy.yaml
+
+
+GitHub Actions
+/ .github/workflows/deploy.yaml
+Invalid workflow file
+
+You have an error in your yaml syntax on line 160
   run: |
   FRONTEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-frontend:${{ github.sha }}"
   BACKEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-backend:${{ github.sha }}"
