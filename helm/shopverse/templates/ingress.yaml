@@ -7,10 +7,18 @@ metadata:
   labels:
     app: shopverse
   annotations:
-{{ toYaml .Values.ingress.annotations | indent 4 }}
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+{{- toYaml .Values.ingress.annotations | nindent 4 }}
 
 spec:
   ingressClassName: {{ .Values.ingress.ingressClassName }}
+
+  tls:
+    - hosts:
+        - {{ .Values.frontend.ingressHost }}
+      secretName: frontend-tls
+
   rules:
     - host: {{ .Values.frontend.ingressHost | quote }}
       http:
@@ -31,10 +39,18 @@ metadata:
   labels:
     app: shopverse
   annotations:
-{{ toYaml .Values.ingress.annotations | indent 4 }}
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+{{- toYaml .Values.ingress.annotations | nindent 4 }}
 
 spec:
   ingressClassName: {{ .Values.ingress.ingressClassName }}
+
+  tls:
+    - hosts:
+        - {{ .Values.backend.ingressHost }}
+      secretName: backend-tls
+
   rules:
     - host: {{ .Values.backend.ingressHost | quote }}
       http:
