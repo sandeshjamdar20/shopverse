@@ -8,6 +8,7 @@ metadata:
     app: shopverse
   annotations:
 {{ toYaml .Values.ingress.annotations | indent 4 }}
+
 spec:
   ingressClassName: {{ .Values.ingress.ingressClassName }}
   rules:
@@ -31,6 +32,7 @@ metadata:
     app: shopverse
   annotations:
 {{ toYaml .Values.ingress.annotations | indent 4 }}
+
 spec:
   ingressClassName: {{ .Values.ingress.ingressClassName }}
   rules:
