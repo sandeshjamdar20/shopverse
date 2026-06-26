@@ -2,84 +2,55 @@
 
 apiVersion: networking.k8s.io/v1
 kind: Ingress
-
 metadata:
-name: {{ .Values.frontend.ingressName }}
-
-labels:
-app: shopverse
-
-annotations:
+  name: {{ .Values.frontend.ingressName }}
+  labels:
+    app: shopverse
+  annotations:
 {{ toYaml .Values.ingress.annotations | indent 4 }}
-
 spec:
-ingressClassName: {{ .Values.ingress.ingressClassName }}
-
-rules:
-
-* host: {{ .Values.frontend.ingressHost | quote }}
-
-  http:
-  paths:
-
-  * path: /
-    pathType: Prefix
-
-    backend:
-    service:
-    name: {{ .Values.frontend.serviceName }}
-
-    ```
-    port:
-      number: {{ .Values.frontend.servicePort }}
-    ```
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  rules:
+    - host: {{ .Values.frontend.ingressHost | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.frontend.serviceName }}
+                port:
+                  number: {{ .Values.frontend.servicePort }}
 
 ---
-
 apiVersion: networking.k8s.io/v1
 kind: Ingress
-
 metadata:
-name: {{ .Values.backend.ingressName }}
-
-labels:
-app: shopverse
-
-annotations:
+  name: {{ .Values.backend.ingressName }}
+  labels:
+    app: shopverse
+  annotations:
 {{ toYaml .Values.ingress.annotations | indent 4 }}
-
 spec:
-ingressClassName: {{ .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  rules:
+    - host: {{ .Values.backend.ingressHost | quote }}
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.backend.serviceName }}
+                port:
+                  number: {{ .Values.backend.servicePort }}
 
-rules:
-
-* host: {{ .Values.backend.ingressHost | quote }}
-
-  http:
-  paths:
-
-  * path: /api
-    pathType: Prefix
-
-    backend:
-    service:
-    name: {{ .Values.backend.serviceName }}
-
-    ```
-    port:
-      number: {{ .Values.backend.servicePort }}
-    ```
-
-  * path: /health
-    pathType: Exact
-
-    backend:
-    service:
-    name: {{ .Values.backend.serviceName }}
-
-    ```
-    port:
-      number: {{ .Values.backend.servicePort }}
-    ```
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: {{ .Values.backend.serviceName }}
+                port:
+                  number: {{ .Values.backend.servicePort }}
 
 {{- end }}
