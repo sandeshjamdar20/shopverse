@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
@@ -20,6 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -131,10 +137,22 @@ jobs:
         run: |
           FRONTEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-frontend:${{ github.sha }}"
           BACKEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-backend:${{ github.sha }}"
-          sed -i "s|image:.*# frontend-image|image: ${FRONTEND_IMG}  # frontend-image|" helm/shopverse/values.yaml
-          sed -i "s|image:.*# backend-image|image: ${BACKEND_IMG}  # backend-image|" helm/shopverse/values.yaml
+
+          sed -i "s|image:.*# frontend-image|image: ${FRONTEND_IMG} # frontend-image|" helm/shopverse/values.yaml
+          sed -i "s|image:.*# backend-image|image: ${BACKEND_IMG} # backend-image|" helm/shopverse/values.yaml
+
           echo "Updated values.yaml:"
+    
           cat helm/shopverse/values.yaml
+
+      - name: Commit updated values.yaml
+        run: |
+          git config --global user.name "sandeshjamdar20"
+          git config --global user.email "sandeshjamdar51@gmail.com"
+
+          git add helm/shopverse/values.yaml
+          git commit -m "Update image tags to ${{ github.sha }}" || echo "No changes to commit"
+          git push
 
       - name: Install Helm
         uses: azure/setup-helm@v3
