@@ -138,8 +138,8 @@ jobs:
           FRONTEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-frontend:${{ github.sha }}"
           BACKEND_IMG="${{ env.ECR_REGISTRY }}/shopverse-backend:${{ github.sha }}"
 
-          sed -i "s|shopverse-frontend:.*|shopverse-frontend:${{ github.sha }}|g" helm/shopverse/values.yaml
-          sed -i "s|shopverse-backend:.*|shopverse-backend:${{ github.sha }}|g" helm/shopverse/values.yaml
+          sed -i "s|${{ env.ECR_REGISTRY }}/shopverse-frontend:[^\"]*|${FRONTEND_IMG}|g" helm/shopverse/values.yaml
+          sed -i "s|${{ env.ECR_REGISTRY }}/shopverse-backend:[^\"]*|${BACKEND_IMG}|g" helm/shopverse/values.yaml
 
           echo "Updated values.yaml:"
     
