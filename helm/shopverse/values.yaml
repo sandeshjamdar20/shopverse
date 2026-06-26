@@ -1,45 +1,68 @@
-frontend:
-  deploymentName: shopverse-frontend
-  replicas: 2
-  image: "609898225296.dkr.ecr.us-east-1.amazonaws.com/shopverse-frontend:latest"
-  serviceName: shopverse-frontend-svc
-  servicePort: 80
-  ingressName: shopverse-frontend-ingress
-  ingressHost: "jamdarwadi.shop"
+{{- if .Values.ingress.enabled }}
 
-backend:
-  deploymentName: shopverse-backend
-  replicas: 2
-  image: "609898225296.dkr.ecr.us-east-1.amazonaws.com/shopverse-backend:latest"
-  serviceName: shopverse-backend-svc
-  servicePort: 8080
-  ingressName: shopverse-backend-ingress
-  ingressHost: "api.jamdarwadi.shop"
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.frontend.ingressName }}
+  labels:
+    app: shopverse
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 
-# ──────────────────────────────────────
-# MySQL
-# ──────────────────────────────────────
-mysql:
-  database: shopverse
-  user: shopverse
-  rootPassword: "Admin@123"
-  password: "Admin@123"
-  storage: 5Gi
-  storageClass: gp2
-  resources:
-    limits:
-      memory: "512Mi"
-      cpu: "500m"
-    requests:
-      memory: "256Mi"
-      cpu: "250m"
+spec:
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  tls:
+    - hosts:
+        - {{ .Values.frontend.ingressHost }}
+      secretName: frontend-tls
+  rules:
+    - host: {{ .Values.frontend.ingressHost | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.frontend.serviceName }}
+                port:
+                  number: {{ .Values.frontend.servicePort }}
 
-# ──────────────────────────────────────
-# Shared
-# ──────────────────────────────────────
-ingress:
-  enabled: true
-  ingressClassName: nginx
-  annotations: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.backend.ingressName }}
+  labels:
+    app: shopverse
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 
-jwtSecret: "shopverse-jwt-secret"
+spec:
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  tls:
+    - hosts:
+        - {{ .Values.backend.ingressHost }}
+      secretName: backend-tls
+  rules:
+    - host: {{ .Values.backend.ingressHost | quote }}
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.backend.serviceName }}
+                port:
+                  number: {{ .Values.backend.servicePort }}
+
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: {{ .Values.backend.serviceName }}
+                port:
+                  number: {{ .Values.backend.servicePort }}
+
+{{- end }}
